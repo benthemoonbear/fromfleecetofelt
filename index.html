@@ -526,7 +526,7 @@ const GLOBE=['badger-sculpture','chef-rat','toadstool-earrings','dog-portrait-co
     }
   }
   const reduced=matchMedia('(prefers-reduced-motion: reduce)').matches;
-  let rot=0,last=0,speed=0.16,paused=false;
+  let rot=0,last=0,speed=-0.16,paused=false;
   wrap.addEventListener('pointerenter',()=>paused=true);wrap.addEventListener('pointerleave',()=>paused=false);
   function frame(t){
     const dt=Math.min(40,t-last);last=t;if(!paused&&!reduced)rot+=speed*dt/1000;
