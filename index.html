@@ -68,13 +68,11 @@ h1,h2,h3{font-weight:600;letter-spacing:-.025em;line-height:1}
 .hero-pic{position:relative;justify-self:end;width:min(46vw,760px);aspect-ratio:1;margin-right:calc(var(--margin) * -2.2)}
 .hero-pic .disc{position:absolute;inset:0;background:radial-gradient(circle at 35% 30%,#fff,var(--fleece) 55%,#e9e4d6);animation:breathe 9s ease-in-out infinite}
 @keyframes breathe{0%,100%{transform:scale(1) rotate(0)}50%{transform:scale(1.025) rotate(-1.5deg)}}
-/* globe of pieces, turning inside the fleece */
-.globe-wrap{position:absolute;inset:3.5%;width:93%;height:93%;background:radial-gradient(circle at 50% 45%,#5c6d50,var(--moss) 55%,var(--moss-deep));perspective:1400px;perspective-origin:50% 50%;overflow:hidden}
-.globe{position:absolute;left:50%;top:50%;width:0;height:0;transform-style:preserve-3d;transform:rotateX(-8deg)}
-.globe .core{position:absolute;left:0;top:0;width:var(--d);height:var(--d);margin:calc(var(--d) / -2);border-radius:50%;background:var(--fleece);transform:translateZ(0)}
-.globe .t{position:absolute;left:0;top:0;width:var(--w);height:var(--w);margin:calc(var(--w) / -2);border-radius:8%;overflow:hidden;will-change:transform,opacity;backface-visibility:hidden}
-.globe .t img{width:100%;height:100%;object-fit:cover;display:block}
-.globe-wrap::after{content:"";position:absolute;inset:0;pointer-events:none;background:radial-gradient(circle at 42% 38%,rgba(255,255,255,.10) 0%,rgba(0,0,0,0) 38%,rgba(35,43,29,.45) 72%,rgba(35,43,29,.8) 100%)}
+.collage{position:absolute;inset:3.5%;width:93%;height:93%;display:grid;grid-template-columns:1fr 1fr;grid-template-rows:1fr 1fr;gap:6px;background:var(--fleece)}
+.collage .tile{position:relative;overflow:hidden;background:var(--ground-2)}
+.collage .tile img{position:absolute;inset:0;width:100%;height:100%;object-fit:cover;opacity:0;transform:scale(1.08);transition:opacity 1.1s var(--ease),transform 7s linear}
+.collage .tile img.on{opacity:1;transform:scale(1)}
+.collage .tile img.out{opacity:0;transform:scale(1.04);filter:blur(6px)}
 .hero-pic figcaption{position:absolute;left:8%;bottom:4%;font-size:1rem;color:var(--fleece);background:rgba(35,43,29,.45);padding:.45em 1em;border-radius:999px;backdrop-filter:blur(10px);-webkit-backdrop-filter:blur(10px);border:1px solid rgba(251,248,242,.18)}
 @keyframes drift{from{transform:scale(1)}to{transform:scale(1.07) translate(-1.5%,-1%)}}
 /* loose fibres drifting across the hero */
@@ -302,10 +300,11 @@ h1,h2,h3{font-weight:600;letter-spacing:-.025em;line-height:1}
       </div>
       <figure class="hero-pic rise" style="--i:1">
         <div class="disc fleece"></div>
-        <div class="globe-wrap fleece">
-          <div class="globe" id="globe" role="img" aria-label="A slowly turning globe of Barbara's felted pieces"></div>
+        <div class="collage fleece" id="collage" aria-label="A changing collage of Barbara's felted pieces" role="img">
+          <div class="tile" style="--t:0"></div><div class="tile" style="--t:1"></div>
+          <div class="tile" style="--t:2"></div><div class="tile" style="--t:3"></div>
         </div>
-        <figcaption id="collage-cap">Thirty pieces, all one of a kind</figcaption>
+        <figcaption id="collage-cap">Badger in Herdwick fleece</figcaption>
       </figure>
     </div>
   </div>
@@ -505,44 +504,19 @@ STRIP.forEach(([n,p,u,l],k)=>{
 });
 const io=new IntersectionObserver(es=>es.forEach(e=>{if(e.isIntersecting){e.target.classList.add('in');io.unobserve(e.target)}}),{rootMargin:'0px 0px -8% 0px'});
 document.querySelectorAll('.rise').forEach(el=>io.observe(el));
-const GLOBE=['badger-sculpture','chef-rat','toadstool-earrings','dog-portrait-collie','hedgehog-brooch','cockatoo','nuno-cobweb-scarf','sleeping-bunny','acorns','westie','love-bird-brooch','dumbo-rat','mackerel-wall-hanging','budgie-brooch','pumpkin','seal','herdwick-sheep-brooch','bunny-brooches','horse-head-brooch','spring-lamb-necklace','toadstool-heart-pendant','ceramic-buttons','heart-drop-earrings','toadstool-pendant','memorial-rat','raku-house-wreath','badger-sculpture-2','herdwick-sheep-brooch-2','nuno-cobweb-scarf-poppy','dog-portrait-collie-face'];
-(function(){
-  const g=document.getElementById('globe'),wrap=g.parentElement;
-  const tiles=[];let R=0;
-  function layout(){
-    const W=wrap.clientWidth; R=W*0.42; const tw=W*0.08, step=tw*1.08;
-    g.innerHTML='';tiles.length=0;let k=0;
-    const core=document.createElement('div');core.className='core';core.style.setProperty('--d',(R*2*1.01)+'px');g.appendChild(core);
-    const nr=Math.round(Math.PI*R/step);           // rings from pole to pole
-    for(let r=1;r<nr;r++){
-      const lat=-Math.PI/2+Math.PI*r/nr, cl=Math.cos(lat);
-      const n=Math.max(3,Math.round(2*Math.PI*R*cl/step));
-      for(let i=0;i<n;i++){
-        const d=document.createElement('div');d.className='t';d.style.setProperty('--w',tw+'px');
-        const im=new Image();im.src='photos/'+GLOBE[(k*7+r)%GLOBE.length]+'.jpg';im.alt='';im.width=200;im.height=200;im.decoding='async';
-        d.appendChild(im);g.appendChild(d);
-        tiles.push({el:d,lat,lon:2*Math.PI*i/n+(r%2?Math.PI/n:0)});k++;
-      }
-    }
-  }
-  const reduced=matchMedia('(prefers-reduced-motion: reduce)').matches;
-  let rot=0,last=0,speed=-0.16,paused=false;
-  wrap.addEventListener('pointerenter',()=>paused=true);wrap.addEventListener('pointerleave',()=>paused=false);
-  function frame(t){
-    const dt=Math.min(40,t-last);last=t;if(!paused&&!reduced)rot+=speed*dt/1000;
-    for(const q of tiles){
-      const lon=q.lon+rot, cl=Math.cos(q.lat);
-      const z=R*cl*Math.cos(lon);
-      if(z<-0.05*R){if(q.on){q.el.style.display='none';q.on=false}continue}
-      if(!q.on){q.el.style.display='';q.on=true}
-      const x=R*cl*Math.sin(lon), y=-R*Math.sin(q.lat);
-      q.el.style.transform=`translate3d(${x}px,${y}px,${z}px) rotateY(${lon}rad) rotateX(${-q.lat}rad)`;
-    }
-    if(!reduced)requestAnimationFrame(frame);
-  }
-  layout();requestAnimationFrame(frame);
-  let rt;addEventListener('resize',()=>{clearTimeout(rt);rt=setTimeout(()=>{layout();if(reduced)frame(0)},150)});
-})();
+const COLLAGE=[['badger-sculpture','Badger in Herdwick fleece'],['chef-rat','Chef rat'],['toadstool-earrings','Toadstool earrings'],['dog-portrait-collie','Rough collie portrait'],['hedgehog-brooch','Hedgehog brooch'],['cockatoo','Cockatoo'],['nuno-cobweb-scarf','Nuno cobweb scarf'],['sleeping-bunny','Sleeping bunny'],['acorns','Felted acorns'],['westie','Westie'],['love-bird-brooch','Love bird brooch'],['dumbo-rat','Dumbo rat'],['mackerel-wall-hanging','Mackerel wall hanging'],['budgie-brooch','Budgie brooch'],['pumpkin','Felted pumpkin'],['seal','Seal']];
+const tiles=[...document.querySelectorAll('#collage .tile')],cap=document.getElementById('collage-cap');
+let ci=0;const reduced=matchMedia('(prefers-reduced-motion: reduce)').matches;
+function tileShow(t,k){
+  const [u,n]=COLLAGE[k%COLLAGE.length];
+  const im=new Image();im.src='photos/'+u+'.jpg';im.alt='';im.width=600;im.height=600;
+  const old=t.querySelector('img.on');
+  t.appendChild(im);
+  requestAnimationFrame(()=>requestAnimationFrame(()=>{im.classList.add('on');if(old){old.classList.remove('on');old.classList.add('out');setTimeout(()=>old.remove(),1200)}}));
+  return n;
+}
+tiles.forEach((t,i)=>tileShow(t,i));ci=4;
+if(!reduced){setInterval(()=>{const t=tiles[ci%4];cap.textContent=tileShow(t,ci);ci++},3200)}
 const nb=document.getElementById('navbar');addEventListener('scroll',()=>nb.classList.toggle('stuck',scrollY>40),{passive:true});
 const hp=document.querySelector('.hero-pic');
 if(!matchMedia('(prefers-reduced-motion: reduce)').matches){
